@@ -136,15 +136,37 @@ resource RegistryFix 'Microsoft.Compute/virtualMachines/extensions@2021-03-01' =
     autoUpgradeMinorVersion: true
     settings: {
       fileUris: [
-        'https://raw.githubusercontent.com/andrew-kemp/public/refs/heads/main/CloudKerberosTicketRetrievalEnabled.ps1'
+        'https://raw.githubusercontent.com/andrew-kemp/CloudPAW/refs/heads/main/Enable-CloudKerberos.ps1'
       ]
-      commandToExecute: 'powershell -ExecutionPolicy Unrestricted -File CloudKerberosTicketRetrievalEnabled.ps1'
+      commandToExecute: 'powershell -ExecutionPolicy Unrestricted -File Enable-CloudKerberos.ps1'
     }
   }
   dependsOn: [
     entraIdJoin
   ]
 }]
+
+resource RemoveApps 'Microsoft.Compute/virtualMachines/extensions@2021-03-01' = [for i in range(0, numberOfHosts): {
+  parent: VM[i]
+  name: 'CustomScriptExtension'
+  location: location
+  properties: {
+    publisher: 'Microsoft.Compute'
+    type: 'CustomScriptExtension'
+    typeHandlerVersion: '1.10'
+    autoUpgradeMinorVersion: true
+    settings: {
+      fileUris: [
+        'https://raw.githubusercontent.com/andrew-kemp/CloudPAW/refs/heads/main/Remove-WindowsApps.ps1'
+      ]
+      commandToExecute: 'powershell -ExecutionPolicy Unrestricted -File Remove-WindowsApps.ps1'
+    }
+  }
+  dependsOn: [
+    RegistryFix
+  ]
+}]
+
 
 
 // Join the SessionHosts to the HostPool
@@ -171,7 +193,7 @@ resource dcs 'Microsoft.Compute/virtualMachines/extensions@2024-03-01' = [for i 
     }
   }
   dependsOn: [
-    RegistryFix
+    RemoveApps
   ]
 }]
 
