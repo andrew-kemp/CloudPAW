@@ -7,7 +7,7 @@ Import-Module Az
 Import-Module Az.DesktopVirtualization
 
 # Connect to Microsoft Graph using device code authentication with Directory scope
-Connect-MgGraph -Scopes "Directory.ReadWrite.All" -UseDeviceAuthentication
+Connect-MgGraph -Scopes "Directory.ReadWrite.All" 
 
 # Connect to your Azure account
 Connect-AzAccount
