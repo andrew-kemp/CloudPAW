@@ -1,17 +1,24 @@
 param (
+    [string]$RegistrationKey,
     [string]$HostPoolName,
     [string]$ResourceGroupName,
-    [string]$KeyVaultName,
-    [string]$SecretName
+    [string]$ModulesURL
 )
 
-# Import the necessary modules
+# Import the necessary module
 Import-Module -Name Az.DesktopVirtualization
-Import-Module -Name Az.KeyVault
 
-# Retrieve the registration key
-$registrationInfo = Get-AzWvdHostPool -ResourceGroupName $ResourceGroupName -Name $HostPoolName
-$registrationKey = $registrationInfo.RegistrationInfo.Token
+# Download and import the configuration module
+Invoke-WebRequest -Uri $ModulesURL -OutFile 'Configuration.zip'
+Expand-Archive -Path 'Configuration.zip' -DestinationPath 'Configuration'
+Import-Module -Name 'Configuration'
 
-# Store the registration key in Azure Key Vault
-Set-AzKeyVaultSecret -VaultName $KeyVaultName -Name $SecretName -SecretValue (ConvertTo-SecureString $registrationKey -AsPlainText -Force)
+# Join the session host to the host pool
+$sessionHostName = $env:COMPUTERNAME
+$joinResult = Register-AzWvdSessionHost -ResourceGroupName $ResourceGroupName -HostPoolName $HostPoolName -SessionHostName $sessionHostName -RegistrationInfoToken $RegistrationKey
+
+if ($joinResult) {
+    Write-Output "Successfully joined $sessionHostName to the host pool $HostPoolName."
+} else {
+    Write-Error "Failed to join $sessionHostName to the host pool $HostPoolName."
+}
