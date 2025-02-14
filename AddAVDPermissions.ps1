@@ -1,0 +1,93 @@
+# Install and import the necessary modules
+Install-Module Microsoft.Graph -Scope CurrentUser -Force
+Install-Module -Name Az -Scope CurrentUser -Force
+Install-Module -Name Az.DesktopVirtualization -Scope CurrentUser -Force
+Import-Module Microsoft.Graph
+Import-Module Az
+Import-Module Az.DesktopVirtualization
+
+# Connect to Microsoft Graph using device code authentication with Directory scope
+Connect-MgGraph -Scopes "Directory.ReadWrite.All" -UseDeviceAuthentication
+
+# Connect to your Azure account
+Connect-AzAccount
+
+# Define group names
+$userGroupName = "_User-cPAW-Users"
+$adminGroupName = "_User-cPAW-Admins"
+$deviceGroupName = "_Device-cPAWs"
+
+# Define the service principal name for Azure Virtual Desktop
+$avdServicePrincipalName = "Azure Virtual Desktop"
+
+# Create AVD Users group
+$userGroup = New-MgGroup -DisplayName $userGroupName -MailEnabled:$false -SecurityEnabled:$true -MailNickname "usercpawusers"
+
+# Create AVD Admins group
+$adminGroup = New-MgGroup -DisplayName $adminGroupName -MailEnabled:$false -SecurityEnabled:$true -MailNickname "usercpawadmins"
+
+# Create Dynamic Device group
+$membershipRule = '(device.displayName -contains "YourDeviceName")'
+$deviceGroup = New-MgGroup -DisplayName $deviceGroupName -MailEnabled:$false -SecurityEnabled:$true -MailNickname "devicecpaws" -GroupTypes @() -MembershipRule $membershipRule -MembershipRuleProcessingState "On"
+
+# Retrieve the subscription ID dynamically
+$subscriptions = Get-AzSubscription
+$subscriptions | ForEach-Object { Write-Host "$($_.Name) - $($_.Id)" }
+$subscriptionList = $subscriptions | ForEach-Object { "$($_.Name) - $($_.Id)" }
+
+# Display the subscription list with numbers
+for ($i = 0; $i -lt $subscriptionList.Count; $i++) {
+    Write-Host "$i. $($subscriptionList[$i])"
+}
+
+# Prompt for the subscription number
+$subscriptionNumber = Read-Host -Prompt "Enter the number of the subscription from the list above"
+$selectedSubscription = $subscriptions[$subscriptionNumber]
+$subscriptionId = $selectedSubscription.Id
+
+# Set the context to the selected subscription
+Set-AzContext -SubscriptionId $subscriptionId
+
+# Prompt for the resource group name
+$resourceGroupName = Read-Host -Prompt "Enter the name of the resource group"
+
+# Assign "Virtual Machine User Login" role to cPAW-User group
+New-AzRoleAssignment -ObjectId $userGroup.Id -RoleDefinitionName "Virtual Machine User Login" -Scope "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName"
+
+# Assign "Virtual Machine User Login" role to cPAW-Admin group
+New-AzRoleAssignment -ObjectId $adminGroup.Id -RoleDefinitionName "Virtual Machine User Login" -Scope "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName"
+
+# Assign "Virtual Machine Administrator Login" role to cPAW-Admin group
+New-AzRoleAssignment -ObjectId $adminGroup.Id -RoleDefinitionName "Virtual Machine Administrator Login" -Scope "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName"
+
+# Retrieve the service principal object ID
+$avdServicePrincipal = Get-AzADServicePrincipal -DisplayName $avdServicePrincipalName
+$avdServicePrincipalId = $avdServicePrincipal.Id
+
+# Assign "Desktop Virtualization Power On Contributor" role to the Azure Virtual Desktop service principal
+New-AzRoleAssignment -ObjectId $avdServicePrincipalId -RoleDefinitionName "Desktop Virtualization Power On Contributor" -Scope "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName"
+
+
+# Create the application group name using the resource group name prefix
+$appGroupName = "$resourceGroupName-AppGroup"
+
+# Retrieve the object IDs of the user groups
+$userGroupId = (Get-AzADGroup -DisplayName $userGroupName).Id
+$adminGroupId = (Get-AzADGroup -DisplayName $adminGroupName).Id
+
+# Retrieve the resource ID of the application group
+$appGroupPath = (Get-AzWvdApplicationGroup -Name $appGroupName -ResourceGroupName $resourceGroupName).Id
+
+# Assign the cPAW-User group to the application group
+New-AzRoleAssignment -ObjectId $userGroupId -RoleDefinitionName "Desktop Virtualization User" -Scope $appGroupPath
+
+# Assign the cPAW-Admin group to the application group
+New-AzRoleAssignment -ObjectId $adminGroupId -RoleDefinitionName "Desktop Virtualization User" -Scope $appGroupPath
+
+# Retrieve the session desktop application
+$sessionDesktop = Get-AzWvdDesktop -ResourceGroupName $resourceGroupName -ApplicationGroupName $appGroupName -Name "SessionDesktop"
+
+# Update the display name
+$sessionDesktop.FriendlyName = "Privileged Access Desktop"
+Update-AzWvdDesktop -ResourceGroupName $resourceGroupName -ApplicationGroupName $appGroupName -Name "SessionDesktop" -FriendlyName "Privileged Access Desktop"
+
