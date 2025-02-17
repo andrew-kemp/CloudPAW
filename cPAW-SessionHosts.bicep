@@ -91,7 +91,7 @@ resource VM 'Microsoft.Compute/virtualMachines@2020-12-01' = [for i in range(0, 
 //Join the VM's to Entra and Entroll in intune
 resource entraIdJoin 'Microsoft.Compute/virtualMachines/extensions@2021-11-01' = [for i in range(0, numberOfHosts): {
   parent: VM[i]
-  name: '${sessionHostPrefix}-${i}-AADLoginForWindows'
+  name: '${sessionHostPrefix}-${i}-EntraJoinEntrollIntune'
   location: location
   properties: {
     publisher: 'Microsoft.Azure.ActiveDirectory'

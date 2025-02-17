@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.33.93.31351",
-      "templateHash": "11466673473217745968"
+      "templateHash": "2649460512550208860"
     }
   },
   "parameters": {
@@ -158,7 +158,7 @@
       "name": "[format('{0}/{1}', format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]), format('{0}-{1}-guestAttestationExtension', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[copyIndex()]))]",
       "location": "[parameters('location')]",
       "properties": {
-        "publisher": "Microsoft.Azure.Security",
+        "publisher": "Microsoft.Azure.Security.WindowsAttestation",
         "type": "GuestAttestation",
         "typeHandlerVersion": "1.0",
         "autoUpgradeMinorVersion": true
