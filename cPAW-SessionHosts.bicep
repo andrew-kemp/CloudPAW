@@ -34,7 +34,7 @@ resource vNet 'Microsoft.Network/virtualNetworks@2021-05-01' = {
     ]
   }
 }
-
+//Create the NIc's for the VM's
 resource nic 'Microsoft.Network/networkInterfaces@2020-11-01' = [for i in range(0, numberOfHosts): {
   name: '${sessionHostPrefix}-${i}-nic'
   location: location
@@ -52,7 +52,7 @@ resource nic 'Microsoft.Network/networkInterfaces@2020-11-01' = [for i in range(
     ]
   }
 }]
-
+//Create the VM's
 resource VM 'Microsoft.Compute/virtualMachines@2020-12-01' = [for i in range(0, numberOfHosts): {
   name: '${sessionHostPrefix}-${i}'
   location: location
@@ -86,31 +86,12 @@ resource VM 'Microsoft.Compute/virtualMachines@2020-12-01' = [for i in range(0, 
   }
 }]
 
-// Schedule daily shutdown at 19:00 GMT
-resource autoShutdown 'Microsoft.DevTestLab/schedules@2018-09-15' = [for i in range(0, numberOfHosts): {
-  name: '${sessionHostPrefix}-${i}-shutdown'
-  location: location
-  properties: {
-    status: 'Enabled'
-    taskType: 'ComputeVmShutdownTask'
-    dailyRecurrence: {
-      time: '19:00'
-    }
-    timeZoneId: 'GMT Standard Time'
-    notificationSettings: {
-      status: 'Disabled'
 
-    }
-    targetResourceId: VM[i].id
-  }
-  dependsOn: [
-  VM[i]
-]
-}]
 
+//Join the VM's to Entra and Entroll in intune
 resource entraIdJoin 'Microsoft.Compute/virtualMachines/extensions@2021-11-01' = [for i in range(0, numberOfHosts): {
   parent: VM[i]
-  name: 'AADLoginForWindows'
+  name: '${sessionHostPrefix}-${i}-AADLoginForWindows'
   location: location
   properties: {
     publisher: 'Microsoft.Azure.ActiveDirectory'
@@ -122,33 +103,31 @@ resource entraIdJoin 'Microsoft.Compute/virtualMachines/extensions@2021-11-01' =
       mdmId: '0000000a-0000-0000-c000-000000000000'
     } 
   }
+  
+  
 }]
 
+//Install the Guest Attestation Extension
 
-resource RegistryFix 'Microsoft.Compute/virtualMachines/extensions@2021-03-01' = [for i in range(0, numberOfHosts): {
+resource guestAttestationExtension 'Microsoft.Compute/virtualMachines/extensions@2024-07-01' = [for i in range(0, numberOfHosts): {
   parent: VM[i]
-  name: 'CustomScriptExtension'
+  name: '${sessionHostPrefix}-${i}-guestAttestationExtension'
   location: location
   properties: {
-    publisher: 'Microsoft.Compute'
-    type: 'CustomScriptExtension'
-    typeHandlerVersion: '1.10'
+    publisher: 'Microsoft.Azure.Security'
+    type: 'GuestAttestation'
+    typeHandlerVersion: '1.0'
     autoUpgradeMinorVersion: true
-    settings: {
-      fileUris: [
-        'https://raw.githubusercontent.com/andrew-kemp/CloudPAW/refs/heads/main/Enable-CloudKerberos.ps1'
-      ]
-      commandToExecute: 'powershell -ExecutionPolicy Unrestricted -File Enable-CloudKerberos.ps1'
-    }
   }
-  dependsOn: [
+  dependsOn:[
     entraIdJoin
   ]
 }]
 
-resource RemoveApps 'Microsoft.Compute/virtualMachines/extensions@2021-03-01' = [for i in range(0, numberOfHosts): {
+//run some preperation on the VM's to remove any windows apps and also enable cloud kerberos
+resource SessionPrep 'Microsoft.Compute/virtualMachines/extensions@2021-03-01' = [for i in range(0, numberOfHosts): {
   parent: VM[i]
-  name: 'CustomScriptExtension'
+  name: '${sessionHostPrefix}-${i}-CustomScriptExtension'
   location: location
   properties: {
     publisher: 'Microsoft.Compute'
@@ -157,16 +136,15 @@ resource RemoveApps 'Microsoft.Compute/virtualMachines/extensions@2021-03-01' = 
     autoUpgradeMinorVersion: true
     settings: {
       fileUris: [
-        'https://raw.githubusercontent.com/andrew-kemp/CloudPAW/refs/heads/main/Remove-WindowsApps.ps1'
+        'https://raw.githubusercontent.com/andrew-kemp/CloudPAW/refs/heads/main/SessionHostPrep.ps1'
       ]
-      commandToExecute: 'powershell -ExecutionPolicy Unrestricted -File Remove-WindowsApps.ps1'
+      commandToExecute: 'powershell -ExecutionPolicy Unrestricted -File SessionHostPrep.ps1'
     }
   }
   dependsOn: [
-    RegistryFix
+    guestAttestationExtension
   ]
 }]
-
 
 
 // Join the SessionHosts to the HostPool
@@ -193,7 +171,6 @@ resource dcs 'Microsoft.Compute/virtualMachines/extensions@2024-03-01' = [for i 
     }
   }
   dependsOn: [
-    RemoveApps
+    SessionPrep
   ]
 }]
-

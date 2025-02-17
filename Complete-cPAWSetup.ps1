@@ -1,21 +1,37 @@
-# Install and import the necessary modules
+# Install and import the necessary modules to complete the setup
 Install-Module Microsoft.Graph -Scope CurrentUser -Force
 Install-Module -Name Az -Scope CurrentUser -Force
 Install-Module -Name Az.DesktopVirtualization -Scope CurrentUser -Force
-Import-Module Microsoft.Graph
-Import-Module Az
-Import-Module Az.DesktopVirtualization
+#Import-Module Microsoft.Graph
+#Import-Module Az
+#Import-Module Az.DesktopVirtualization
+
+
+# Prompt for the resource group name
+#$resourceGroupName = Read-Host -Prompt "Enter the name of the resource group and session host prefix? eg: cPAW"
+
+
+# Prompt for the resource group name
+$resourceGroupName = Read-Host -Prompt "Enter the name of the resource group and session host prefix? or press enter to use the default cPAW"
+
+# Set default value if input is empty
+if ([string]::IsNullOrWhiteSpace($resourceGroupName)) {
+    $resourceGroupName = "cPAW"
+}
+
+Write-Output "Resource Group Name: $resourceGroupName"
+
 
 # Connect to Microsoft Graph using device code authentication with Directory scope
-Connect-MgGraph -Scopes "Directory.ReadWrite.All" 
+Connect-MgGraph -Scopes "Directory.ReadWrite.All"
 
 # Connect to your Azure account
 Connect-AzAccount
 
 # Define group names
-$userGroupName = "_User-cPAW-Users"
-$adminGroupName = "_User-cPAW-Admins"
-$deviceGroupName = "_Device-cPAWs"
+$userGroupName = "_User-$resourceGroupName-Users"
+$adminGroupName = "_User-$resourceGroupName-Admins"
+$deviceGroupName = "_Device-$resourceGroupName"
 
 # Define the service principal name for Azure Virtual Desktop
 $avdServicePrincipalName = "Azure Virtual Desktop"
@@ -48,8 +64,7 @@ $subscriptionId = $selectedSubscription.Id
 # Set the context to the selected subscription
 Set-AzContext -SubscriptionId $subscriptionId
 
-# Prompt for the resource group name
-$resourceGroupName = Read-Host -Prompt "Enter the name of the resource group"
+
 
 # Assign "Virtual Machine User Login" role to cPAW-User group
 New-AzRoleAssignment -ObjectId $userGroup.Id -RoleDefinitionName "Virtual Machine User Login" -Scope "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName"

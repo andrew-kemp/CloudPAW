@@ -44,4 +44,3 @@ resource Workspace 'Microsoft.DesktopVirtualization/workspaces@2021-07-12' = {
     
 }
 }
-
