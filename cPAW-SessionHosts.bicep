@@ -127,7 +127,7 @@ resource guestAttestationExtension 'Microsoft.Compute/virtualMachines/extensions
 //run some preperation on the VM's to remove any windows apps and also enable cloud kerberos
 resource SessionPrep 'Microsoft.Compute/virtualMachines/extensions@2021-03-01' = [for i in range(0, numberOfHosts): {
   parent: VM[i]
-  name: '${sessionHostPrefix}-${i}-CustomScriptExtension'
+  name: '${sessionHostPrefix}-${i}-CSessionPrep'
   location: location
   properties: {
     publisher: 'Microsoft.Compute'
@@ -150,7 +150,7 @@ resource SessionPrep 'Microsoft.Compute/virtualMachines/extensions@2021-03-01' =
 // Join the SessionHosts to the HostPool
 resource dcs 'Microsoft.Compute/virtualMachines/extensions@2024-03-01' = [for i in range(0, numberOfHosts): {
   parent: VM[i]
-  name: '${sessionHostPrefix}-${i}-DSC'
+  name: '${sessionHostPrefix}-${i}-JointoHostPool'
   location: location
   properties: {
     publisher: 'Microsoft.Powershell'
