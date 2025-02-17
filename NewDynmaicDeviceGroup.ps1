@@ -6,7 +6,7 @@ if ([string]::IsNullOrWhiteSpace($prefix)) {
 
 # Define the group properties
 $group = @{
-    displayName = "$prefix Dynamic Device Group"
+    displayName = "_Device-$prefix"
     mailEnabled = $false
     mailNickname = "$prefix-dynamicdevicegroup"
     securityEnabled = $true
