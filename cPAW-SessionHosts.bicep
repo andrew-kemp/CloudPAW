@@ -114,7 +114,7 @@ resource guestAttestationExtension 'Microsoft.Compute/virtualMachines/extensions
   name: '${sessionHostPrefix}-${i}-guestAttestationExtension'
   location: location
   properties: {
-    publisher: 'Microsoft.Azure.Security'
+    publisher: 'Microsoft.Azure.Security.WindowsAttestation'
     type: 'GuestAttestation'
     typeHandlerVersion: '1.0'
     autoUpgradeMinorVersion: true

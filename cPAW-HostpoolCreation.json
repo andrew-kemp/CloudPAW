@@ -1,0 +1,71 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.33.93.31351",
+      "templateHash": "10187138235817500845"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "uksouth"
+    },
+    "sessionHostPrefix": {
+      "type": "string",
+      "defaultValue": "cPAW"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.DesktopVirtualization/hostPools",
+      "apiVersion": "2021-07-12",
+      "name": "[format('{0}-HostPool', parameters('sessionHostPrefix'))]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "friendlyName": "[format('{0} Host Pool', parameters('sessionHostPrefix'))]",
+        "description": "[format('{0} Virual Privileged Access Workstaiotn Host Pool for privielged users to securely access the Microsoft Admin centers from', parameters('sessionHostPrefix'))]",
+        "hostPoolType": "Pooled",
+        "loadBalancerType": "BreadthFirst",
+        "maxSessionLimit": 5,
+        "personalDesktopAssignmentType": "Automatic",
+        "startVMOnConnect": true,
+        "preferredAppGroupType": "Desktop",
+        "customRdpProperty": "enablecredsspsupport:i:0;authentication level:i:2;enablerdsaadauth:i:1;"
+      }
+    },
+    {
+      "type": "Microsoft.DesktopVirtualization/applicationGroups",
+      "apiVersion": "2021-07-12",
+      "name": "[format('{0}-AppGroup', parameters('sessionHostPrefix'))]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "description": "[format('{0} Application Group', parameters('sessionHostPrefix'))]",
+        "friendlyName": "[format('{0} Desktop Application Group', parameters('sessionHostPrefix'))]",
+        "hostPoolArmPath": "[resourceId('Microsoft.DesktopVirtualization/hostPools', format('{0}-HostPool', parameters('sessionHostPrefix')))]",
+        "applicationGroupType": "Desktop"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DesktopVirtualization/hostPools', format('{0}-HostPool', parameters('sessionHostPrefix')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DesktopVirtualization/workspaces",
+      "apiVersion": "2021-07-12",
+      "name": "[format('{0}-Workspace', parameters('sessionHostPrefix'))]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "description": "[format('{0} Workspace for Privileged Users', parameters('sessionHostPrefix'))]",
+        "friendlyName": "[format('{0} Workspace', parameters('sessionHostPrefix'))]",
+        "applicationGroupReferences": [
+          "[resourceId('Microsoft.DesktopVirtualization/applicationGroups', format('{0}-AppGroup', parameters('sessionHostPrefix')))]"
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DesktopVirtualization/applicationGroups', format('{0}-AppGroup', parameters('sessionHostPrefix')))]"
+      ]
+    }
+  ]
+}
