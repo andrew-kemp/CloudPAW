@@ -64,7 +64,7 @@ Write-Output "Group created with ID: $($group.Id)"
 #Set the device extrnsion attributes for the cPAW devices
 $params = @{
     extensionAttributes = @{
-        extensionAttribute1 = "Privileged Access Workstation"
+        extensionAttribute1 = "cloud Privileged Access Workstation"
     }
 }
 
@@ -135,7 +135,7 @@ Update-AzWvdDesktop -ResourceGroupName $resourceGroupName -ApplicationGroupName 
 $automationAccountName = "MyAutomationAccount"
 $runbookName = "StopAVDSessionHosts"
 $scheduleName = "DailyShutdown"
-$startTime = "2025-02-18T19:00:00Z"
+$startTime = "19:00:00"
 
 # Create an Automation Account
 az automation account create --resource-group $resourceGroupName --name $automationAccountName --location $location
