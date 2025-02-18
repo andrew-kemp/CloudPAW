@@ -68,7 +68,7 @@ $params = @{
     }
 }
 
-$devices = Get-MgDevice -Filter "startswith(displayName,'PAW-')"
+$devices = Get-MgDevice -Filter "startswith(displayName,'$resourceGroupName')"
 foreach ($device in $devices) {
     Update-MgDevice -DeviceId $device.Id -BodyParameter $params
 }
