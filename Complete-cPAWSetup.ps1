@@ -1,15 +1,21 @@
+# Function to check if a module is installed
+function Install-ModuleIfNotInstalled {
+    param (
+        [string]$ModuleName
+    )
+    if (-not (Get-Module -ListAvailable -Name $ModuleName)) {
+        Install-Module -Name $ModuleName -Scope CurrentUser -Force
+    }
+}
+
 # Install and import the necessary modules to complete the setup
-Install-Module Microsoft.Graph -Scope CurrentUser -Force
-Install-Module -Name Az -Scope CurrentUser -Force
-Install-Module -Name Az.DesktopVirtualization -Scope CurrentUser -Force
-#Import-Module Microsoft.Graph
-#Import-Module Az
-#Import-Module Az.DesktopVirtualization
+Install-ModuleIfNotInstalled -ModuleName "Microsoft.Graph"
+Install-ModuleIfNotInstalled -ModuleName "Az"
+Install-ModuleIfNotInstalled -ModuleName "Az.DesktopVirtualization"
 
 
 # Prompt for the resource group name
 #$resourceGroupName = Read-Host -Prompt "Enter the name of the resource group and session host prefix? eg: cPAW"
-
 
 # Prompt for the resource group name
 $resourceGroupName = Read-Host -Prompt "Enter the name of the resource group and session host prefix? or press enter to use the default cPAW"
@@ -21,9 +27,8 @@ if ([string]::IsNullOrWhiteSpace($resourceGroupName)) {
 
 Write-Output "Resource Group Name: $resourceGroupName"
 
-
 # Connect to Microsoft Graph using device code authentication with Directory scope
-Connect-MgGraph -Scopes "Directory.ReadWrite.All"
+Connect-MgGraph -Scopes "Directory.ReadWrite.All", "Device.ReadWrite.All"
 
 # Connect to your Azure account
 Connect-AzAccount
@@ -56,6 +61,18 @@ $groupBody = @{
 # Create the group
 $group = New-MgGroup -BodyParameter $groupBody
 Write-Output "Group created with ID: $($group.Id)"
+#Set the device extrnsion attributes for the cPAW devices
+$params = @{
+    extensionAttributes = @{
+        extensionAttribute1 = "Privileged Access Workstation"
+    }
+}
+
+$devices = Get-MgDevice -Filter "startswith(displayName,'PAW-')"
+foreach ($device in $devices) {
+    Update-MgDevice -DeviceId $device.Id -BodyParameter $params
+}
+
 
 # Retrieve the subscription ID dynamically
 $subscriptions = Get-AzSubscription
@@ -75,8 +92,6 @@ $subscriptionId = $selectedSubscription.Id
 # Set the context to the selected subscription
 Set-AzContext -SubscriptionId $subscriptionId
 
-
-
 # Assign "Virtual Machine User Login" role to cPAW-User group
 New-AzRoleAssignment -ObjectId $userGroup.Id -RoleDefinitionName "Virtual Machine User Login" -Scope "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName"
 
@@ -92,7 +107,6 @@ $avdServicePrincipalId = $avdServicePrincipal.Id
 
 # Assign "Desktop Virtualization Power On Contributor" role to the Azure Virtual Desktop service principal
 New-AzRoleAssignment -ObjectId $avdServicePrincipalId -RoleDefinitionName "Desktop Virtualization Power On Contributor" -Scope "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName"
-
 
 # Create the application group name using the resource group name prefix
 $appGroupName = "$resourceGroupName-AppGroup"
@@ -116,4 +130,43 @@ $sessionDesktop = Get-AzWvdDesktop -ResourceGroupName $resourceGroupName -Applic
 # Update the display name
 $sessionDesktop.FriendlyName = "Privileged Access Desktop"
 Update-AzWvdDesktop -ResourceGroupName $resourceGroupName -ApplicationGroupName $appGroupName -Name "SessionDesktop" -FriendlyName "Privileged Access Desktop"
+
+# Automation Account and Runbook Setup
+$automationAccountName = "MyAutomationAccount"
+$runbookName = "StopAVDSessionHosts"
+$scheduleName = "DailyShutdown"
+$startTime = "2025-02-18T19:00:00Z"
+
+# Create an Automation Account
+az automation account create --resource-group $resourceGroupName --name $automationAccountName --location $location
+
+# PowerShell script content for the runbook
+$runbookContent = @"
+param (
+    [string]`$ResourceGroupName
+)
+
+# Authenticate to Azure
+Connect-AzAccount -Identity
+
+# Get all VMs in the specified resource group
+`$vms = Get-AzVM -ResourceGroupName `$ResourceGroupName
+
+# Stop each VM
+foreach (`$vm in `$vms) {
+    Stop-AzVM -ResourceGroupName `$vm.ResourceGroupName -Name `$vm.Name -Force
+}
+"@
+
+# Create the runbook
+az automation runbook create --resource-group $resourceGroupName --automation-account-name $automationAccountName --name $runbookName --type PowerShell --runbook-file $runbookContent
+
+# Publish the runbook
+az automation runbook publish --resource-group $resourceGroupName --automation-account-name $automationAccountName --name $runbookName
+
+# Create a schedule
+az automation schedule create --resource-group $resourceGroupName --automation-account-name $automationAccountName --name $scheduleName --start-time $startTime --frequency Day --interval 1
+
+# Link the schedule to the runbook
+az automation runbook-schedule link --resource-group $resourceGroupName --automation-account-name $automationAccountName --runbook-name $runbookName --schedule-name $scheduleName --parameters "{\"ResourceGroupName\":\"$resourceGroupName\"}"
 
