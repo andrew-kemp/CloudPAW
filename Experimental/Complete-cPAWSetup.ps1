@@ -43,7 +43,7 @@ $userGroup = New-MgGroup -DisplayName $userGroupName -MailEnabled:$false -Securi
 $adminGroup = New-MgGroup -DisplayName $adminGroupName -MailEnabled:$false -SecurityEnabled:$true -MailNickname "usercpawadmins"
 
 # Create Dynamic Device group
-$membershipRule = '(device.displayName -contains "YourDeviceName")'
+$membershipRule = '(device.displayName -contains "$resourceGroupName")'
 $deviceGroup = New-MgGroup -DisplayName $deviceGroupName -MailEnabled:$false -SecurityEnabled:$true -MailNickname "devicecpaws" -GroupTypes @() -MembershipRule $membershipRule -MembershipRuleProcessingState "On"
 
 # Retrieve the subscription ID dynamically
