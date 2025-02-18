@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.33.93.31351",
-      "templateHash": "2649460512550208860"
+      "templateHash": "17886888326931295270"
     }
   },
   "parameters": {
@@ -98,7 +98,7 @@
       },
       "properties": {
         "hardwareProfile": {
-          "vmSize": "Standard_B4ms"
+          "vmSize": "Standard_d2as_v5"
         },
         "osProfile": {
           "computerName": "[format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[copyIndex()])]",
@@ -132,7 +132,7 @@
       },
       "type": "Microsoft.Compute/virtualMachines/extensions",
       "apiVersion": "2021-11-01",
-      "name": "[format('{0}/{1}', format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]), format('{0}-{1}-AADLoginForWindows', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[copyIndex()]))]",
+      "name": "[format('{0}/{1}', format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]), format('{0}-{1}-EntraJoinEntrollIntune', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[copyIndex()]))]",
       "location": "[parameters('location')]",
       "properties": {
         "publisher": "Microsoft.Azure.ActiveDirectory",
@@ -175,7 +175,7 @@
       },
       "type": "Microsoft.Compute/virtualMachines/extensions",
       "apiVersion": "2021-03-01",
-      "name": "[format('{0}/{1}', format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]), format('{0}-{1}-CustomScriptExtension', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[copyIndex()]))]",
+      "name": "[format('{0}/{1}', format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]), format('{0}-{1}-CSessionPrep', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[copyIndex()]))]",
       "location": "[parameters('location')]",
       "properties": {
         "publisher": "Microsoft.Compute",
@@ -201,7 +201,7 @@
       },
       "type": "Microsoft.Compute/virtualMachines/extensions",
       "apiVersion": "2024-03-01",
-      "name": "[format('{0}/{1}', format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]), format('{0}-{1}-DSC', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[copyIndex()]))]",
+      "name": "[format('{0}/{1}', format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]), format('{0}-{1}-JointoHostPool', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[copyIndex()]))]",
       "location": "[parameters('location')]",
       "properties": {
         "publisher": "Microsoft.Powershell",

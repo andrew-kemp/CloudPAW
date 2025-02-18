@@ -61,7 +61,7 @@ resource VM 'Microsoft.Compute/virtualMachines@2020-12-01' = [for i in range(0, 
   }
   properties: {
     hardwareProfile: {
-      vmSize: 'Standard_B4ms'
+      vmSize: 'Standard_d2as_v5'
     }
     osProfile: {
       computerName: '${sessionHostPrefix}-${i}'
@@ -127,7 +127,7 @@ resource guestAttestationExtension 'Microsoft.Compute/virtualMachines/extensions
 //run some preperation on the VM's to remove any windows apps and also enable cloud kerberos
 resource SessionPrep 'Microsoft.Compute/virtualMachines/extensions@2021-03-01' = [for i in range(0, numberOfHosts): {
   parent: VM[i]
-  name: '${sessionHostPrefix}-${i}-CSessionPrep'
+  name: '${sessionHostPrefix}-${i}-SessionPrep'
   location: location
   properties: {
     publisher: 'Microsoft.Compute'

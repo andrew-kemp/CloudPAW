@@ -43,8 +43,19 @@ $userGroup = New-MgGroup -DisplayName $userGroupName -MailEnabled:$false -Securi
 $adminGroup = New-MgGroup -DisplayName $adminGroupName -MailEnabled:$false -SecurityEnabled:$true -MailNickname "usercpawadmins"
 
 # Create Dynamic Device group
-$membershipRule = '(device.displayName -contains "YourDeviceName")'
-$deviceGroup = New-MgGroup -DisplayName $deviceGroupName -MailEnabled:$false -SecurityEnabled:$true -MailNickname "devicecpaws" -GroupTypes @() -MembershipRule $membershipRule -MembershipRuleProcessingState "On"
+# Define the group body
+$groupBody = @{
+    displayName = "$deviceGroupName"
+    mailEnabled = $false
+    mailNickname = "dynamicdevicegroup"
+    securityEnabled = $true
+    groupTypes = @("DynamicMembership")
+    membershipRule = "(device.displayName -startsWith `"$resourceGroupName`")"
+    membershipRuleProcessingState = "On"
+}
+# Create the group
+$group = New-MgGroup -BodyParameter $groupBody
+Write-Output "Group created with ID: $($group.Id)"
 
 # Retrieve the subscription ID dynamically
 $subscriptions = Get-AzSubscription
