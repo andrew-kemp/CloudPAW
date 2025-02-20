@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.33.93.31351",
-      "templateHash": "17886888326931295270"
+      "templateHash": "5805959277536020145"
     }
   },
   "parameters": {
@@ -175,7 +175,7 @@
       },
       "type": "Microsoft.Compute/virtualMachines/extensions",
       "apiVersion": "2021-03-01",
-      "name": "[format('{0}/{1}', format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]), format('{0}-{1}-CSessionPrep', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[copyIndex()]))]",
+      "name": "[format('{0}/{1}', format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]), format('{0}-{1}-SessionPrep', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[copyIndex()]))]",
       "location": "[parameters('location')]",
       "properties": {
         "publisher": "Microsoft.Compute",

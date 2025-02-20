@@ -1,14 +1,14 @@
 param location string = 'uksouth'
-param sessionHostPrefix string = 'cPAW'
+param DefaultPrefix string = 'cPAW'
 
 
 //Deploy the Hostpool
 resource HostPool 'Microsoft.DesktopVirtualization/hostPools@2021-07-12' = {
-  name: '${sessionHostPrefix}-HostPool'
+  name: '${DefaultPrefix}-HostPool'
   location: location
   properties: {
-    friendlyName: '${sessionHostPrefix} Host Pool'
-    description: '${sessionHostPrefix} Virual Privileged Access Workstaiotn Host Pool for privielged users to securely access the Microsoft Admin centers from'
+    friendlyName: '${DefaultPrefix} Host Pool'
+    description: '${DefaultPrefix} Virual Privileged Access Workstaiotn Host Pool for privielged users to securely access the Microsoft Admin centers from'
     hostPoolType: 'Pooled'
     loadBalancerType: 'BreadthFirst'
     maxSessionLimit: 5
@@ -21,11 +21,11 @@ resource HostPool 'Microsoft.DesktopVirtualization/hostPools@2021-07-12' = {
 
 //Deploy the vPAW Desktop Application Group
 resource AppGroup 'Microsoft.DesktopVirtualization/applicationGroups@2021-07-12' = {
-  name: '${sessionHostPrefix}-AppGroup'
+  name: '${DefaultPrefix}-AppGroup'
   location: location
   properties: {
-    description: '${sessionHostPrefix} Application Group'
-    friendlyName: '${sessionHostPrefix} Desktop Application Group'
+    description: '${DefaultPrefix} Application Group'
+    friendlyName: '${DefaultPrefix} Desktop Application Group'
     hostPoolArmPath: HostPool.id
     applicationGroupType: 'Desktop'
   }
@@ -33,11 +33,11 @@ resource AppGroup 'Microsoft.DesktopVirtualization/applicationGroups@2021-07-12'
 
 //Deploy the vPAW Workspace 
 resource Workspace 'Microsoft.DesktopVirtualization/workspaces@2021-07-12' = {
-  name: '${sessionHostPrefix}-Workspace'
+  name: '${DefaultPrefix}-Workspace'
   location: location
   properties: {
-    description: '${sessionHostPrefix} Workspace for Privileged Users'
-    friendlyName: '${sessionHostPrefix} Workspace'
+    description: '${DefaultPrefix} Workspace for Privileged Users'
+    friendlyName: '${DefaultPrefix} Workspace'
    applicationGroupReferences: [
     AppGroup.id
    ]
