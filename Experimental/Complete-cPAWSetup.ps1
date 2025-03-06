@@ -1,15 +1,21 @@
+# Function to check if a module is installed
+function Install-ModuleIfNotInstalled {
+    param (
+        [string]$ModuleName
+    )
+    if (-not (Get-Module -ListAvailable -Name $ModuleName)) {
+        Install-Module -Name $ModuleName -Scope CurrentUser -Force
+    }
+}
+
 # Install and import the necessary modules to complete the setup
-Install-Module Microsoft.Graph -Scope CurrentUser -Force
-Install-Module -Name Az -Scope CurrentUser -Force
-Install-Module -Name Az.DesktopVirtualization -Scope CurrentUser -Force
-#Import-Module Microsoft.Graph
-#Import-Module Az
-#Import-Module Az.DesktopVirtualization ##
+Install-ModuleIfNotInstalled -ModuleName "Microsoft.Graph"
+Install-ModuleIfNotInstalled -ModuleName "Az"
+Install-ModuleIfNotInstalled -ModuleName "Az.DesktopVirtualization"
 
 
 # Prompt for the resource group name
 #$resourceGroupName = Read-Host -Prompt "Enter the name of the resource group and session host prefix? eg: cPAW"
-
 
 # Prompt for the resource group name
 $resourceGroupName = Read-Host -Prompt "Enter the name of the resource group and session host prefix? or press enter to use the default cPAW"
@@ -21,9 +27,8 @@ if ([string]::IsNullOrWhiteSpace($resourceGroupName)) {
 
 Write-Output "Resource Group Name: $resourceGroupName"
 
-
 # Connect to Microsoft Graph using device code authentication with Directory scope
-Connect-MgGraph -Scopes "Directory.ReadWrite.All"
+Connect-MgGraph -Scopes "Directory.ReadWrite.All", "Device.ReadWrite.All"
 
 # Connect to your Azure account
 Connect-AzAccount
@@ -43,8 +48,31 @@ $userGroup = New-MgGroup -DisplayName $userGroupName -MailEnabled:$false -Securi
 $adminGroup = New-MgGroup -DisplayName $adminGroupName -MailEnabled:$false -SecurityEnabled:$true -MailNickname "usercpawadmins"
 
 # Create Dynamic Device group
-$membershipRule = '(device.displayName -contains "$resourceGroupName")'
-$deviceGroup = New-MgGroup -DisplayName $deviceGroupName -MailEnabled:$false -SecurityEnabled:$true -MailNickname "devicecpaws" -GroupTypes @() -MembershipRule $membershipRule -MembershipRuleProcessingState "On"
+# Define the group body
+$groupBody = @{
+    displayName = "$deviceGroupName"
+    mailEnabled = $false
+    mailNickname = "dynamicdevicegroup"
+    securityEnabled = $true
+    groupTypes = @("DynamicMembership")
+    membershipRule = "(device.displayName -startsWith `"$resourceGroupName`")"
+    membershipRuleProcessingState = "On"
+}
+# Create the group
+$group = New-MgGroup -BodyParameter $groupBody
+Write-Output "Group created with ID: $($group.Id)"
+#Set the device extrnsion attributes for the cPAW devices
+$params = @{
+    extensionAttributes = @{
+        extensionAttribute1 = "cloud Privileged Access Workstation"
+    }
+}
+
+$devices = Get-MgDevice -Filter "startswith(displayName,'$resourceGroupName')"
+foreach ($device in $devices) {
+    Update-MgDevice -DeviceId $device.Id -BodyParameter $params
+}
+
 
 # Retrieve the subscription ID dynamically
 $subscriptions = Get-AzSubscription
@@ -64,8 +92,6 @@ $subscriptionId = $selectedSubscription.Id
 # Set the context to the selected subscription
 Set-AzContext -SubscriptionId $subscriptionId
 
-
-
 # Assign "Virtual Machine User Login" role to cPAW-User group
 New-AzRoleAssignment -ObjectId $userGroup.Id -RoleDefinitionName "Virtual Machine User Login" -Scope "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName"
 
@@ -81,7 +107,6 @@ $avdServicePrincipalId = $avdServicePrincipal.Id
 
 # Assign "Desktop Virtualization Power On Contributor" role to the Azure Virtual Desktop service principal
 New-AzRoleAssignment -ObjectId $avdServicePrincipalId -RoleDefinitionName "Desktop Virtualization Power On Contributor" -Scope "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName"
-
 
 # Create the application group name using the resource group name prefix
 $appGroupName = "$resourceGroupName-AppGroup"
