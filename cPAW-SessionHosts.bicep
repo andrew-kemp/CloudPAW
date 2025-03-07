@@ -1,4 +1,4 @@
-param location string = 'uksouth'
+//param location string = 'uksouth'
 param sessionHostPrefix string = 'cPAW'
 param numberOfHosts int = 2
 @secure()
@@ -17,7 +17,7 @@ resource HostPool 'Microsoft.DesktopVirtualization/hostpools@2021-07-12' existin
 // Deploy the network infrastructure
 resource vNet 'Microsoft.Network/virtualNetworks@2021-05-01' = {
   name: '${sessionHostPrefix}-vNet'
-  location: location
+  location: resourceGroup().location
   properties: {
     addressSpace: {
       addressPrefixes: [
@@ -37,7 +37,7 @@ resource vNet 'Microsoft.Network/virtualNetworks@2021-05-01' = {
 //Create the NIc's for the VM's
 resource nic 'Microsoft.Network/networkInterfaces@2020-11-01' = [for i in range(0, numberOfHosts): {
   name: '${sessionHostPrefix}-${i}-nic'
-  location: location
+  location: resourceGroup().location
   properties: {
     ipConfigurations: [
       {
@@ -55,7 +55,7 @@ resource nic 'Microsoft.Network/networkInterfaces@2020-11-01' = [for i in range(
 //Create the VM's
 resource VM 'Microsoft.Compute/virtualMachines@2020-12-01' = [for i in range(0, numberOfHosts): {
   name: '${sessionHostPrefix}-${i}'
-  location: location
+  location: resourceGroup().location
   identity: {
     type: 'SystemAssigned'
   }
@@ -92,7 +92,7 @@ resource VM 'Microsoft.Compute/virtualMachines@2020-12-01' = [for i in range(0, 
 resource entraIdJoin 'Microsoft.Compute/virtualMachines/extensions@2021-11-01' = [for i in range(0, numberOfHosts): {
   parent: VM[i]
   name: '${sessionHostPrefix}-${i}-EntraJoinEntrollIntune'
-  location: location
+  location: resourceGroup().location
   properties: {
     publisher: 'Microsoft.Azure.ActiveDirectory'
     type: 'AADLoginForWindows'
@@ -112,7 +112,7 @@ resource entraIdJoin 'Microsoft.Compute/virtualMachines/extensions@2021-11-01' =
 resource guestAttestationExtension 'Microsoft.Compute/virtualMachines/extensions@2024-07-01' = [for i in range(0, numberOfHosts): {
   parent: VM[i]
   name: '${sessionHostPrefix}-${i}-guestAttestationExtension'
-  location: location
+  location: resourceGroup().location
   properties: {
     publisher: 'Microsoft.Azure.Security.WindowsAttestation'
     type: 'GuestAttestation'
@@ -128,7 +128,7 @@ resource guestAttestationExtension 'Microsoft.Compute/virtualMachines/extensions
 resource SessionPrep 'Microsoft.Compute/virtualMachines/extensions@2021-03-01' = [for i in range(0, numberOfHosts): {
   parent: VM[i]
   name: '${sessionHostPrefix}-${i}-SessionPrep'
-  location: location
+  location: resourceGroup().location
   properties: {
     publisher: 'Microsoft.Compute'
     type: 'CustomScriptExtension'
@@ -151,7 +151,7 @@ resource SessionPrep 'Microsoft.Compute/virtualMachines/extensions@2021-03-01' =
 resource dcs 'Microsoft.Compute/virtualMachines/extensions@2024-03-01' = [for i in range(0, numberOfHosts): {
   parent: VM[i]
   name: '${sessionHostPrefix}-${i}-JointoHostPool'
-  location: location
+  location: resourceGroup().location
   properties: {
     publisher: 'Microsoft.Powershell'
     type: 'DSC'

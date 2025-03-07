@@ -1,0 +1,226 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.33.93.31351",
+      "templateHash": "6525167278192897917"
+    }
+  },
+  "parameters": {
+    "sessionHostPrefix": {
+      "type": "string",
+      "defaultValue": "cPAW"
+    },
+    "numberOfHosts": {
+      "type": "int",
+      "defaultValue": 2
+    },
+    "adminPassword": {
+      "type": "securestring"
+    },
+    "adminUsername": {
+      "type": "string",
+      "defaultValue": "cPAW-Admin"
+    },
+    "hostPoolRegistrationInfoToken": {
+      "type": "string",
+      "defaultValue": "Enter HostPool Registration Key here"
+    }
+  },
+  "variables": {
+    "modulesURL": "[format('https://wvdportalstorageblob.blob.{0}/galleryartifacts/Configuration_1.0.02797.442.zip', environment().suffixes.storage)]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2021-05-01",
+      "name": "[format('{0}-vNet', parameters('sessionHostPrefix'))]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "192.168.250.0/24"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[format('{0}-Subnet', parameters('sessionHostPrefix'))]",
+            "properties": {
+              "addressPrefix": "192.168.250.0/24"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "copy": {
+        "name": "nic",
+        "count": "[length(range(0, parameters('numberOfHosts')))]"
+      },
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-11-01",
+      "name": "[format('{0}-{1}-nic', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[copyIndex()])]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "name",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', format('{0}-vNet', parameters('sessionHostPrefix'))), '2021-05-01').subnets[0].id]"
+              }
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', format('{0}-vNet', parameters('sessionHostPrefix')))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "VM",
+        "count": "[length(range(0, parameters('numberOfHosts')))]"
+      },
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2020-12-01",
+      "name": "[format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[copyIndex()])]",
+      "location": "[resourceGroup().location]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_d2as_v5"
+        },
+        "osProfile": {
+          "computerName": "[format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[copyIndex()])]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsDesktop",
+            "offer": "Windows-11",
+            "sku": "win11-24h2-avd",
+            "version": "latest"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-{1}-nic', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]))]"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-{1}-nic', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "entraIdJoin",
+        "count": "[length(range(0, parameters('numberOfHosts')))]"
+      },
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2021-11-01",
+      "name": "[format('{0}/{1}', format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]), format('{0}-{1}-EntraJoinEntrollIntune', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[copyIndex()]))]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "publisher": "Microsoft.Azure.ActiveDirectory",
+        "type": "AADLoginForWindows",
+        "typeHandlerVersion": "2.2",
+        "autoUpgradeMinorVersion": true,
+        "enableAutomaticUpgrade": false,
+        "settings": {
+          "mdmId": "0000000a-0000-0000-c000-000000000000"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "guestAttestationExtension",
+        "count": "[length(range(0, parameters('numberOfHosts')))]"
+      },
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2024-07-01",
+      "name": "[format('{0}/{1}', format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]), format('{0}-{1}-guestAttestationExtension', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[copyIndex()]))]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "publisher": "Microsoft.Azure.Security.WindowsAttestation",
+        "type": "GuestAttestation",
+        "typeHandlerVersion": "1.0",
+        "autoUpgradeMinorVersion": true
+      },
+      "dependsOn": [
+        "entraIdJoin",
+        "[resourceId('Microsoft.Compute/virtualMachines', format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "SessionPrep",
+        "count": "[length(range(0, parameters('numberOfHosts')))]"
+      },
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2021-03-01",
+      "name": "[format('{0}/{1}', format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]), format('{0}-{1}-SessionPrep', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[copyIndex()]))]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "fileUris": [
+            "https://raw.githubusercontent.com/andrew-kemp/CloudPAW/refs/heads/main/SessionHostPrep.ps1"
+          ],
+          "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File SessionHostPrep.ps1"
+        }
+      },
+      "dependsOn": [
+        "guestAttestationExtension",
+        "[resourceId('Microsoft.Compute/virtualMachines', format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "dcs",
+        "count": "[length(range(0, parameters('numberOfHosts')))]"
+      },
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2024-03-01",
+      "name": "[format('{0}/{1}', format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]), format('{0}-{1}-JointoHostPool', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[copyIndex()]))]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "publisher": "Microsoft.Powershell",
+        "type": "DSC",
+        "typeHandlerVersion": "2.76",
+        "settings": {
+          "modulesUrl": "[variables('modulesURL')]",
+          "configurationFunction": "Configuration.ps1\\AddSessionHost",
+          "properties": {
+            "hostPoolName": "[format('{0}-HostPool', parameters('sessionHostPrefix'))]",
+            "aadJoin": true
+          }
+        },
+        "protectedSettings": {
+          "properties": {
+            "registrationInfoToken": "[parameters('hostPoolRegistrationInfoToken')]"
+          }
+        }
+      },
+      "dependsOn": [
+        "SessionPrep",
+        "[resourceId('Microsoft.Compute/virtualMachines', format('{0}-{1}', parameters('sessionHostPrefix'), range(0, parameters('numberOfHosts'))[range(0, parameters('numberOfHosts'))[copyIndex()]]))]"
+      ]
+    }
+  ]
+}

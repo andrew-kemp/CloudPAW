@@ -1,11 +1,11 @@
-param location string = 'uksouth'
+
 param DefaultPrefix string = 'cPAW'
 
 
 //Deploy the Hostpool
 resource HostPool 'Microsoft.DesktopVirtualization/hostPools@2021-07-12' = {
   name: '${DefaultPrefix}-HostPool'
-  location: location
+  location: resourceGroup().location
   properties: {
     friendlyName: '${DefaultPrefix} Host Pool'
     description: '${DefaultPrefix} Virual Privileged Access Workstaiotn Host Pool for privielged users to securely access the Microsoft Admin centers from'
@@ -22,7 +22,7 @@ resource HostPool 'Microsoft.DesktopVirtualization/hostPools@2021-07-12' = {
 //Deploy the vPAW Desktop Application Group
 resource AppGroup 'Microsoft.DesktopVirtualization/applicationGroups@2021-07-12' = {
   name: '${DefaultPrefix}-AppGroup'
-  location: location
+  location: resourceGroup().location
   properties: {
     description: '${DefaultPrefix} Application Group'
     friendlyName: '${DefaultPrefix} Desktop Application Group'
@@ -34,7 +34,7 @@ resource AppGroup 'Microsoft.DesktopVirtualization/applicationGroups@2021-07-12'
 //Deploy the vPAW Workspace 
 resource Workspace 'Microsoft.DesktopVirtualization/workspaces@2021-07-12' = {
   name: '${DefaultPrefix}-Workspace'
-  location: location
+  location: resourceGroup().location
   properties: {
     description: '${DefaultPrefix} Workspace for Privileged Users'
     friendlyName: '${DefaultPrefix} Workspace'
