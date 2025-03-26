@@ -15,7 +15,7 @@ resource HostPool 'Microsoft.DesktopVirtualization/hostPools@2021-07-12' = {
     personalDesktopAssignmentType: 'Automatic'
     startVMOnConnect: true
     preferredAppGroupType: 'Desktop'
-    customRdpProperty: 'enablecredsspsupport:i:0;authentication level:i:2;enablerdsaadauth:i:1;'
+    customRdpProperty: 'enablecredsspsupport:i:1;authentication level:i:2;enablerdsaadauth:i:1;redirectwebauthn:i:1;'
   }
 }
 

@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.33.93.31351",
-      "templateHash": "15386574050195373804"
+      "templateHash": "5808997218910885970"
     }
   },
   "parameters": {
@@ -29,7 +29,7 @@
         "personalDesktopAssignmentType": "Automatic",
         "startVMOnConnect": true,
         "preferredAppGroupType": "Desktop",
-        "customRdpProperty": "enablecredsspsupport:i:0;authentication level:i:2;enablerdsaadauth:i:1;"
+        "customRdpProperty": "enablecredsspsupport:i:0;authentication level:i:2;enablerdsaadauth:i:1;redirectwebauthn:i:1;"
       }
     },
     {

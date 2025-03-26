@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.33.93.31351",
-      "templateHash": "1479537144975618221"
+      "templateHash": "544166231236864371"
     }
   },
   "parameters": {
@@ -28,6 +28,10 @@
     "SubnetName": {
       "type": "string",
       "defaultValue": "cPAW-Subnet"
+    },
+    "groupObjectId": {
+      "type": "string",
+      "defaultValue": "eg 00000000-0000-0000-0000-000000000000"
     }
   },
   "variables": {
@@ -56,7 +60,8 @@
           "defaultAction": "Deny"
         },
         "azureFilesIdentityBasedAuthentication": {
-          "directoryServiceOptions": "AADKERB"
+          "directoryServiceOptions": "AADKERB",
+          "defaultSharePermission": "StorageFileDataSmbShareContributor"
         }
       }
     },
@@ -73,7 +78,8 @@
       "apiVersion": "2022-09-01",
       "name": "[format('{0}/{1}/{2}', variables('StorageAccountName'), 'default', parameters('ProfileShareName'))]",
       "properties": {
-        "shareQuota": 100
+        "shareQuota": 100,
+        "accessTier": "TransactionOptimized"
       },
       "dependsOn": [
         "[resourceId('Microsoft.Storage/storageAccounts/fileServices', variables('StorageAccountName'), 'default')]"
@@ -84,7 +90,8 @@
       "apiVersion": "2022-09-01",
       "name": "[format('{0}/{1}/{2}', variables('StorageAccountName'), 'default', parameters('RedirShareName'))]",
       "properties": {
-        "shareQuota": 100
+        "shareQuota": 100,
+        "accessTier": "TransactionOptimized"
       },
       "dependsOn": [
         "[resourceId('Microsoft.Storage/storageAccounts/fileServices', variables('StorageAccountName'), 'default')]"
@@ -138,6 +145,20 @@
       "dependsOn": [
         "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneName'))]",
         "[resourceId('Microsoft.Network/privateEndpoints', format('{0}-pe', variables('StorageAccountName')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[format('Microsoft.Storage/storageAccounts/{0}', variables('StorageAccountName'))]",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', variables('StorageAccountName')), 'Storage File Data SMB Share Contributor', parameters('groupObjectId'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'e7f6d5a2-4d38-4ba4-9f0e-0d0b4d5e5a7a')]",
+        "principalId": "[parameters('groupObjectId')]",
+        "principalType": "Group"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('StorageAccountName'))]"
       ]
     }
   ]

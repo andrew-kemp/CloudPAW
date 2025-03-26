@@ -75,6 +75,17 @@ resource VM 'Microsoft.Compute/virtualMachines@2020-12-01' = [for i in range(0, 
         sku: 'win11-24h2-avd'
         version: 'latest'
       }
+      osDisk: {
+        createOption: 'FromImage'
+        diskSizeGB: 256
+      }
+      dataDisks: [
+        {
+          lun: 0
+          createOption: 'Empty'
+          diskSizeGB: 256
+        }
+      ]
     }
     networkProfile: {
       networkInterfaces: [

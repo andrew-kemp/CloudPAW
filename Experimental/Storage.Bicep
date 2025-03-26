@@ -4,7 +4,11 @@ param RedirShareName string = 'redirections'
 param vNetName string = 'cPAW-vNet'
 param SubnetName string = 'cPAW-Subnet'
 var privateDnsZoneName = 'privatelink.file.core.windows.net'
+param groupObjectId string = 'eg 00000000-0000-0000-0000-000000000000'
+
 var location = resourceGroup().location
+
+
 
 // Generate a unique string based on the resource group ID
 var uniqueSuffix = uniqueString(resourceGroup().id)
@@ -39,6 +43,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     }
     azureFilesIdentityBasedAuthentication: {
       directoryServiceOptions: 'AADKERB'
+      defaultSharePermission: 'StorageFileDataSmbShareContributor'
     }
   }
 }
@@ -54,6 +59,7 @@ resource profileShare 'Microsoft.Storage/storageAccounts/fileServices/shares@202
   
   properties: {
     shareQuota: 100
+    accessTier: 'TransactionOptimized'
   }
 }
 
@@ -63,6 +69,7 @@ resource redirShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2022-
   
   properties: {
     shareQuota: 100
+    accessTier: 'TransactionOptimized'
   }
 }
 
@@ -104,5 +111,15 @@ resource privateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneG
         }
       }
     ]
+  }
+}
+
+resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storageAccount.id, 'Storage File Data SMB Share Contributor', groupObjectId)
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'e7f6d5a2-4d38-4ba4-9f0e-0d0b4d5e5a7a') // Storage File Data SMB Share Contributor role ID
+    principalId: groupObjectId
+    principalType: 'Group'
   }
 }
