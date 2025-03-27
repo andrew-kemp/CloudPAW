@@ -18,7 +18,7 @@ $device = Get-MgDevice -Filter "startswith(displayName,'$devicename')"
 
 $params = @{
     extensionAttributes = @{
-        extensionAttribute1 = "Access PAW"
+        extensionAttribute1 = "PAW Access"
     }
 }
 
