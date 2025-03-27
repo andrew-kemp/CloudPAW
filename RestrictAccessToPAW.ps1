@@ -13,7 +13,7 @@ Install-ModuleIfNotInstalled -ModuleName "Microsoft.Graph"
 Connect-MgGraph -Scopes "Directory.ReadWrite.All", "Device.ReadWrite.All"
 $devicename = Read-Host -Prompt "Enter the name of Device you want to allow connections to the PAW"
 
-$device = Get-MgDevice -Filter "startswith(displayName,'$devicename')"
+$Accessdevice = Get-MgDevice -Filter "startswith(displayName,'$devicename')"
 
 
 $params = @{
