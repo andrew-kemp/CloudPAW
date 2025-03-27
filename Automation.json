@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.33.93.31351",
+      "templateHash": "7063876849402111364"
+    }
+  },
+  "parameters": {
+    "DefaultPrefix": {
+      "type": "string",
+      "defaultValue": "cPAW"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Automation/automationAccounts",
+      "apiVersion": "2023-05-15-preview",
+      "name": "[format('{0}-AutomationAccount', parameters('DefaultPrefix'))]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "disableLocalAuth": true,
+        "publicNetworkAccess": false,
+        "sku": {
+          "name": "Basic",
+          "capacity": 1
+        }
+      },
+      "tags": {
+        "environment": "production"
+      }
+    }
+  ]
+}

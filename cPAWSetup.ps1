@@ -38,6 +38,7 @@ $userGroupName = "_User-$resourceGroupName-Users"
 $adminGroupName = "_User-$resourceGroupName-Admins"
 $deviceGroupName = "_Device-$resourceGroupName"
 
+
 # Define the service principal name for Azure Virtual Desktop
 $avdServicePrincipalName = "Azure Virtual Desktop"
 
@@ -89,8 +90,20 @@ $subscriptionNumber = Read-Host -Prompt "Enter the number of the subscription fr
 $selectedSubscription = $subscriptions[$subscriptionNumber]
 $subscriptionId = $selectedSubscription.Id
 
+
 # Set the context to the selected subscription
 Set-AzContext -SubscriptionId $subscriptionId
+# Set the VM's to shutdown at 18:00 UTC (19:00 GMT) daily
+# Retrieve all VMs with the prefix specified
+$vms = Get-AzVM -ResourceGroupName $resourceGroupName | Where-Object { $_.Name -like "$resourceGroupName*" }
+
+# Loop through each VM and set auto-shutdown
+foreach ($vm in $vms) {
+    $vmName = $vm.Name
+    Write-Output "Setting auto-shutdown for VM: $vmName"
+    az vm auto-shutdown --resource-group $resourceGroupName --name $vmName --time 18:00 
+}
+
 
 # Assign "Virtual Machine User Login" role to cPAW-User group
 New-AzRoleAssignment -ObjectId $userGroup.Id -RoleDefinitionName "Virtual Machine User Login" -Scope "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName"

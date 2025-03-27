@@ -1,0 +1,13 @@
+$invitations = import-csv .\test1.csv
+
+$messageInfo = New-Object Microsoft.Graph.PowerShell.Models.MicrosoftGraphInvitedUserMessageInfo
+
+$messageInfo.customizedMessageBody = "Hello. You are invited to the Delaware Dev Tenant"
+
+foreach ($email in $invitations) {
+	New-MgInvitation 
+      -InvitedUserEmailAddress $email.InvitedUserEmailAddress `
+		-InvitedUserDisplayName $email.Name `
+		-InviteRedirectUrl https://myapplications.microsoft.com/?tenantid=a00420fd-aec3-4f80-9296-ee3f64ee6c2d`
+		-SendInvitationMessage
+}
