@@ -1,3 +1,4 @@
+Connect-MgGraph -Scopes "Directory.ReadWrite.All", "Device.ReadWrite.All"
 # Function to check if a module is installed
 function Install-ModuleIfNotInstalled {
     param (

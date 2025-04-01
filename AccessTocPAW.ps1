@@ -1,3 +1,6 @@
+#Connect to the Graph
+Connect-MgGraph -Scopes "Directory.ReadWrite.All", "Device.ReadWrite.All"
+
 # Get the user ID using the filter for UPN
 $username = Read-Host -Prompt "Please enter the UPN of the user whose device you need to update"
 $user = Get-MgUser -Filter "startswith(userPrincipalName,'$username')"
@@ -31,11 +34,11 @@ if ($devices.Count -eq 0) {
                         # Update the device's extensionAttribute1
                         $params = @{
                             extensionAttributes = @{
-                                extensionAttribute1 = "PAW Access"
+                                extensionAttribute1 = "Access to cPAW"
                             }
                         }
                         Update-MgDevice -DeviceId $deviceDetails.Id -BodyParameter $params
-                        Write-Host "extensionAttribute1 updated to 'PAW Access' for $($deviceDetails.DisplayName) device ID: $($deviceDetails.Id)"
+                        Write-Host "extensionAttribute1 updated to 'Access to cPAW' for $($deviceDetails.DisplayName) device ID: $($deviceDetails.Id)"
                     } else {
                         Write-Host "Failed to retrieve detailed information for the selected device."
                     }
